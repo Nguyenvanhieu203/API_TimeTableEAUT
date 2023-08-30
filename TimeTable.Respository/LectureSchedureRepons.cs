@@ -1,7 +1,9 @@
 ﻿using Dapper;
 using Newtonsoft.Json;
+using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using TimeTable.DataContext.Data;
 using TimeTable.DataContext.Models;
@@ -17,18 +19,36 @@ namespace TimeTable.Repository
         {
             _connectToSql = connectToSql;
         }
-
-        public async Task<List<LectureSchedureModel__test>> GetAllSchedureReponsAsync()
+        // Lấy tất cả lịch đã đăng ký
+        public async Task<(List<Lecture_ScheduleUserModel>, int)> GetRegisteredCalendarAsync ( string token,int pageIndex, int pageSize)
         {
             try
             {
                 using (var connection = _connectToSql.CreateConnection())
                 {
-                    var results = await connection.QueryAsync<LectureSchedureModel__test>("GetAllTimeTable", commandType: CommandType.StoredProcedure);
-                    
-                    var scheduleModels = new List<LectureSchedureModel__test>();
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var decodedToken = tokenHandler.ReadJwtToken(token);
+                    var userIdClaim = decodedToken.Claims.FirstOrDefault(c => c.Type == "UserId");
+                    if (userIdClaim == null)
+                    {
+                        //result = "Token không hợp lệ";
+                    }
+                    Guid UserId = Guid.Parse(userIdClaim.Value);
 
-                    return results.ToList();
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@Id", UserId);
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connection.QueryAsync<Lecture_ScheduleUserModel>(
+                        "GetAllTimeTableOfUser",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch (Exception ex)
@@ -38,24 +58,27 @@ namespace TimeTable.Repository
         }
 
 
-
-        public async Task<List<LectureSchedureModel>> GetRegisteredCalendarAsync(string token)
+        // Lấy tất cả lịch để đăng ký
+        public async Task<(List<Lecture_ScheduleUserModel>, int)> GetAllSchedureReponsAsync( int pageIndex, int pageSize)
         {
             try
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var decodedToken = tokenHandler.ReadJwtToken(token);
-                var userIdClaim = decodedToken.Claims.FirstOrDefault(c => c.Type == "UserId");
-                if (userIdClaim == null)
-                {
-                    return new List<LectureSchedureModel> { };
-                }
-                Guid UserId = Guid.Parse(userIdClaim.Value);
 
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryAsync<LectureSchedureModel>("GetRegisteredCalendar", new { Id = UserId }, commandType: CommandType.StoredProcedure);
-                    return result.ToList();
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connect.QueryAsync<Lecture_ScheduleUserModel>(
+                        "GetAllTimeTable",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch (Exception ex)
@@ -64,14 +87,36 @@ namespace TimeTable.Repository
             }
         }
 
-        public async Task<LectureSchedureModel> GetSchedureByIdReponsAsync(string id)
+        public async Task<(List<Lecture_ScheduleUserModel>, int)> GetSchedureByIdReponsAsync(string token,string search, int pageIndex, int pageSize)
         {
             try
             {
-                using (var connect = _connectToSql.CreateConnection())
+                using (var connection = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryFirstOrDefaultAsync<LectureSchedureModel>("GetById", new { NameTable = "Lecture_Schedule", Id = id }, commandType: CommandType.StoredProcedure);
-                    return result;
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var decodedToken = tokenHandler.ReadJwtToken(token);
+                    var userIdClaim = decodedToken.Claims.FirstOrDefault(c => c.Type == "UserId");
+                    if (userIdClaim == null)
+                    {
+                        //result = "Token không hợp lệ";
+                    }
+                    Guid UserId = Guid.Parse(userIdClaim.Value);
+
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@Id", UserId);
+                    parameters.Add("@Name", search);
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connection.QueryAsync<Lecture_ScheduleUserModel>(
+                        "GetAllTimeTableOfUserById",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch (Exception ex)

@@ -15,35 +15,35 @@ namespace TimeTable.API.Controllers
             _lectureSchedureRepons = lectureSchedureRepons;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllLectureSchedure()
+        public async Task<MethodResult> GetAllLectureSchedure(string token, int pageIndex, int pageSize)
         {
-            var result = await _lectureSchedureRepons.GetAllSchedureReponsAsync();
-            if(result == null) return NotFound();
-            return Ok(result);
+            var result = await _lectureSchedureRepons.GetRegisteredCalendarAsync(token, pageIndex, pageSize);
+            if(result.Item1 == null) return MethodResult.ResultWithError(result.Item1, 400, "Error", result.Item2);
+            return MethodResult.ResultWithSuccess(result.Item1, 200, "Successfull", result.Item2);
         }
 
         [HttpGet("Id")]
-        public async Task<IActionResult> GetLectureSchedureById(string id)
+        public async Task<MethodResult> GetLectureSchedureById(string token, string search, int pageIndex, int pageSize)
         {
-            var result = await _lectureSchedureRepons.GetSchedureByIdReponsAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            var result = await _lectureSchedureRepons.GetSchedureByIdReponsAsync(token, search, pageIndex, pageSize);
+            if (result.Item1 == null) return MethodResult.ResultWithError(result.Item1, 400, "Error", result.Item2);
+            return MethodResult.ResultWithSuccess(result.Item1, 200, "Successfull", result.Item2);
         }
 
         [HttpGet("Registered_Calendar")]
-        public async Task<IActionResult> GetRegisteredCalendar(string token)
+        public async Task<MethodResult> GetRegisteredCalendar(int pageIndex, int pageSize)
         {
-            var result = await _lectureSchedureRepons.GetRegisteredCalendarAsync(token);
-            if (result == null) return NotFound();
-            return Ok(result);
+            var result = await _lectureSchedureRepons.GetAllSchedureReponsAsync(pageIndex, pageSize);
+            if (result.Item1 == null) return MethodResult.ResultWithError(result.Item1, 400, "Error", result.Item2);
+            return MethodResult.ResultWithSuccess(result.Item1, 200, "Successfull", result.Item2);
         }
 
         [HttpPost]
-        public async Task<IActionResult> UserRegisterEdCalendar (string token, Guid IdSchedure, LectureSchedureMapUserModel lectureSchedureMapUserModel)
+        public async Task<MethodResult> UserRegisterEdCalendar (string token, Guid IdSchedure, LectureSchedureMapUserModel lectureSchedureMapUserModel)
         {
             var result = await _lectureSchedureRepons.UserRegisterEdCalendarAsync(token, IdSchedure, lectureSchedureMapUserModel);
-            if(result == null) return BadRequest();
-            return Ok(result);
+            if(result == null) return MethodResult.ResultWithError(result, 400, "Error", 0);
+            return MethodResult.ResultWithSuccess(result, 200, "Successfull",0);
         }
 
     }

@@ -2,15 +2,13 @@
 {
     public class Lecture_ScheduleManagerModel
     {
-        public string LectureScheduleName { get; set; }
-        public string SubjectName { get; set; }
-        public int SubjectCredits { get; set; }
-        public string ClassName { get; set; }
-        public string LectureScheduleDescription { get; set; }
-        public DateTime SubjectDateStart { get; set; }
-        public DateTime SubjectDateEnd { get; set; }
-        public string UserName { get; set; }
-        public string ClassroomName { get; set; }
+        public Guid IdLecture_Schedule { get; set; }
+        public string Course_Code { get; set; }
+        public string FullName { get; set; }
+        public string LopHoc { get; set; }
+        public string PhongHoc { get; set; }
+        public string MonHoc { get; set; }
+        public string LichHocTongList { get; set; }
     }
     public class SchedulingInputModel
     {
@@ -20,14 +18,13 @@
         public List<Guid> IdclassRooms { get; set; }
         public List<Guid> Idsubjects { get; set; }
     }
-
-    public class SchedulingModel
+    public class Lecture_ScheduleUserModel
     {
-        public Guid Id { get; set; }
-        public Guid IdClass { get; set; }
-        public Guid IdClassRooms { get; set; }
-        public Guid IdSubject { get; set; }
-        public string Cahoc { get; set; }
-        public string ngayhoc { get; set; }
+        public string Course_Code { get; set; }
+        public string FullName { get; set; }
+        public string LopHoc { get; set; }
+        public string PhongHoc { get; set; }
+        public string MonHoc { get; set; }
+        public string LichHocTongList { get; set; }
     }
 }

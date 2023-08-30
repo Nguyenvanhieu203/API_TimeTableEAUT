@@ -10,9 +10,9 @@ namespace TimeTable.Respository.Interfaces
     public interface ILectureSchedureRepons
     {
         //public Task<List<LectureSchedureModel>> GetAllSchedureReponsAsync();
-        public Task<List<LectureSchedureModel__test>> GetAllSchedureReponsAsync();
-        public Task<LectureSchedureModel> GetSchedureByIdReponsAsync(string id);
-        public Task<List<LectureSchedureModel>> GetRegisteredCalendarAsync(string token);
+        public Task<(List<Lecture_ScheduleUserModel>, int)> GetRegisteredCalendarAsync (string token, int pageIndex, int pageSize);
+        public Task<(List<Lecture_ScheduleUserModel>, int)> GetSchedureByIdReponsAsync(string token, string search, int pageIndex, int pageSize);
+        public Task<(List<Lecture_ScheduleUserModel>, int)> GetAllSchedureReponsAsync(int pageIndex, int pageSize);
         public Task<string> UserRegisterEdCalendarAsync(string token, Guid idSchedure, LectureSchedureMapUserModel lectureSchedureMapUserModel);
     }
 }

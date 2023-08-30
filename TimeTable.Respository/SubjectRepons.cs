@@ -1,10 +1,12 @@
 ﻿using Dapper;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Printing;
 using System.IdentityModel.Tokens.Jwt;
 using TimeTable.DataContext.Data;
 using TimeTable.DataContext.Models;
@@ -149,12 +151,12 @@ namespace TimeTable.Repository
                     }
                 }
                 // Format Date columns
-                var dateColumns = new List<int> { 7, 8 }; // Assuming DateStart is column 3 and DateEnd is column 4
+                var dateColumns = new List<int> { 3, 4,8,9 }; // Assuming DateStart is column 3 and DateEnd is column 4
                 foreach (var column in dateColumns)
                 {
                     using (var columnRange = worksheet.Cells[2, column, worksheet.Dimension.Rows, column])
                     {
-                        columnRange.Style.Numberformat.Format = "yyyy-MM-dd"; // Customize the date format as needed
+                        columnRange.Style.Numberformat.Format = "dd-mm-yyyy"; // Customize the date format as needed
                     }
                 }
 
@@ -166,14 +168,27 @@ namespace TimeTable.Repository
             }
         }
 
-        public async Task<List<Subject>> GetAllClassAsync()
+        public async Task<(List<Subject>, int)> GetAllClassAsync(int pageIndex, int pageSize)
         {
             try
             {
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryAsync<Subject>("GetAll", new { NameTable = "Subjects" }, commandType: CommandType.StoredProcedure);
-                    return result.ToList();
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@NameTable", "Subjects");
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connect.QueryAsync<Subject>(
+                        "GetAllSubjects",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
+
                 }
             }
             catch (Exception ex)
@@ -182,14 +197,27 @@ namespace TimeTable.Repository
             }
         }
 
-        public async Task<Subject> GetClassByIdAsync(string roomId)
+        public async Task<(List<Subject>, int)> GetClassByIdAsync(string roomId, int pageIndex, int pageSize)
         {
             try
             {
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryFirstOrDefaultAsync<Subject>("GetById", new { NameTable = "Subjects", Id = roomId }, commandType: CommandType.StoredProcedure);
-                    return result;
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@NameTable", "Subjects");
+                    parameters.Add("@Id", roomId);
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connect.QueryAsync<Subject>(
+                        "GetSubjectById",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch (Exception ex)

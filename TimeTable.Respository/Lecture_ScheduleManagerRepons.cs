@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing.Printing;
 using TimeTable.DataContext.Data;
 using TimeTable.DataContext.Models;
 using TimeTable.Respository.Interfaces;
@@ -25,14 +26,25 @@ namespace TimeTable.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<List<Lecture_ScheduleManagerModel>> GetAllLecture_ScheduleManagerAsync()
+        public async Task<(List<Lecture_ScheduleManagerModel>, int)> GetAllLecture_ScheduleManagerAsync(int pageIndex, int pageSize)
         {
             try
             {
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryAsync<Lecture_ScheduleManagerModel>("GetAllLecture_ScheduleManager", commandType: CommandType.StoredProcedure);
-                    return result.ToList();
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connect.QueryAsync<Lecture_ScheduleManagerModel>(
+                        "GetAllTimeTable",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch(Exception ex)
@@ -41,14 +53,26 @@ namespace TimeTable.Repository
             }
         }
 
-        public async Task<Lecture_ScheduleManagerModel> GetLecture_ScheduleManagerByNameAsync(string name)
+        public async Task<(List<Lecture_ScheduleManagerModel>, int)> GetLecture_ScheduleManagerByNameAsync(string name, int pageIndex, int pageSize)
         {
             try
             {
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result = await connect.QueryFirstOrDefaultAsync<Lecture_ScheduleManagerModel>("GetAllLecture_ScheduleManagerByName", new {  Name = name }, commandType: CommandType.StoredProcedure);
-                    return result;
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@Name", name);
+                    parameters.Add("@pageIndex", pageIndex);
+                    parameters.Add("@pageSize", pageSize);
+                    parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+                    var result = await connect.QueryAsync<Lecture_ScheduleManagerModel>(
+                        "GetAllLecture_ScheduleManagerByName",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    int totalRecords = parameters.Get<int>("@totalRecords");
+                    return (result.ToList(), totalRecords);
                 }
             }
             catch (Exception ex)
@@ -105,7 +129,6 @@ namespace TimeTable.Repository
                 throw new NotImplementedException();
             }
         }
-
 
         public int[,] softFirst1(int[,] a, int classes)
         {
@@ -169,120 +192,119 @@ namespace TimeTable.Repository
             {
                 for (int j = cols - 1; j >= 0; j--)
                 {
-                    switch ((i, j))
+                    if ((i == 1 && j == 4) || (i == 2 && j == 3) || (i == 3 && j == 2))
                     {
-                        case (1, 4):
-                        case (2, 3):
-                        case (3, 2):
-                            result[i, j] = clas;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            clas++;
-                            break;
+                        result[i, j] = clas;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                        clas++;
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
 
-                        case (2, 1):
-                            result[i, j] = 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if ((i == 2 && j == 4) || (i == 3 && j == 3))
+                    {
+                        result[i, j] = clas + 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
 
-                        case (1, 0):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
+                    }
+                    else if ((i == 2 && j == 2))
+                    {
 
-                        case (2, 4):
-                        case (3, 3):
-                            result[i, j] = clas + 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
+                        result[i, j] = 8;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
 
-                        case (2, 2):
-                            result[i, j] = 8;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 1):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
                     }
                 }
 
@@ -301,121 +323,269 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch (i)
+                    if (i == 0 && j == 0)
                     {
-                        case 0:
-                            switch (j)
-                            {
-                                case 0:
-                                    result[i, j] = classes >= 16 ? 16 : 0;
-                                    break;
-                                case 1:
-                                    result[i, j] = classes >= 17 ? 17 : 0;
-                                    break;
-                                case 2:
-                                    result[i, j] = 1;
-                                    break;
-                                case 3:
-                                    result[i, j] = classes >= 21 ? 21 : 0;
-                                    break;
-                                case 4:
-                                    result[i, j] = classes >= 15 ? 15 : 0;
-                                    break;
-                                case 5:
-                                    result[i, j] = classes >= 11 ? 11 : 0;
-                                    break;
-                                default:
-                                    result[i, j] = 0;
-                                    break;
-                            }
-                            break;
-
-                        case 1:
-                            switch (j)
-                            {
-                                case 0:
-                                    result[i, j] = classes >= 4 ? 4 : 0;
-                                    break;
-                                case 1:
-                                    result[i, j] = classes >= 18 ? 18 : 0;
-                                    break;
-                                case 2:
-                                    result[i, j] = classes >= 19 ? 19 : 0;
-                                    break;
-                                case 3:
-                                    result[i, j] = classes >= 20 ? 20 : 0;
-                                    break;
-                                case 4:
-                                    result[i, j] = classes >= 12 ? 12 : 0;
-                                    break;
-                                case 5:
-                                    result[i, j] = classes >= 3 ? 3 : 0;
-                                    break;
-                                default:
-                                    result[i, j] = 0;
-                                    break;
-                            }
-                            break;
-
-                        case 2:
-                            switch (j)
-                            {
-                                case 0:
-                                    result[i, j] = classes >= 10 ? 10 : 0;
-                                    break;
-                                case 1:
-                                    result[i, j] = classes >= 14 ? 14 : 0;
-                                    break;
-                                case 2:
-                                    result[i, j] = classes >= 22 ? 22 : 0;
-                                    break;
-                                case 3:
-                                    result[i, j] = classes >= 13 ? 13 : 0;
-                                    break;
-                                case 4:
-                                    result[i, j] = classes >= 8 ? 8 : 0;
-                                    break;
-                                case 5:
-                                    result[i, j] = classes >= 24 ? 24 : 0;
-                                    break;
-                                default:
-                                    result[i, j] = 0;
-                                    break;
-                            }
-                            break;
-
-                        case 3:
-                            switch (j)
-                            {
-                                case 0:
-                                    result[i, j] = classes >= 5 ? 5 : 0;
-                                    break;
-                                case 1:
-                                    result[i, j] = classes >= 9 ? 9 : 0;
-                                    break;
-                                case 2:
-                                    result[i, j] = classes >= 23 ? 23 : 0;
-                                    break;
-                                case 3:
-                                    result[i, j] = classes >= 2 ? 2 : 0;
-                                    break;
-                                case 4:
-                                    result[i, j] = classes >= 6 ? 6 : 0;
-                                    break;
-                                case 5:
-                                    result[i, j] = classes >= 7 ? 7 : 0;
-                                    break;
-                                default:
-                                    result[i, j] = 0;
-                                    break;
-                            }
-                            break;
-
-                        default:
+                        if (classes >= 16)
+                        {
+                            result[i, j] = 16;
+                        }
+                        else
+                        {
                             result[i, j] = 0;
-                            break;
+                        }
+
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        if (classes >= 17)
+                        {
+                            result[i, j] = 17;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
                     }
 
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 1;
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        if (classes >= 21)
+                        {
+                            result[i, j] = 21;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        if (classes >= 15)
+                        {
+                            result[i, j] = 15;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        if (classes >= 11)
+                        {
+                            result[i, j] = 11;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        if (classes >= 4)
+                        {
+                            result[i, j] = 4;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        if (classes >= 18)
+                        {
+                            result[i, j] = 18;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        if (classes >= 19)
+                        {
+                            result[i, j] = 19;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        if (classes >= 20)
+                        {
+                            result[i, j] = 20;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        if (classes >= 12)
+                        {
+                            result[i, j] = 12;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        if (classes >= 3)
+                        {
+                            result[i, j] = 3;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        if (classes >= 10)
+                        {
+                            result[i, j] = 10;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        if (classes >= 14)
+                        {
+                            result[i, j] = 14;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 2)
+                    {
+                        if (classes >= 22)
+                        {
+                            result[i, j] = 22;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 3)
+                    {
+                        if (classes >= 13)
+                        {
+                            result[i, j] = 13;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        if (classes >= 8)
+                        {
+                            result[i, j] = 8;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        if (classes >= 24)
+                        {
+                            result[i, j] = 24;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        if (classes >= 5)
+                        {
+                            result[i, j] = 5;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        if (classes >= 9)
+                        {
+                            result[i, j] = 9;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 2)
+                    {
+                        if (classes >= 23)
+                        {
+                            result[i, j] = 23;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 3)
+                    {
+                        if (classes >= 2)
+                        {
+                            result[i, j] = 2;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        if (classes >= 6)
+                        {
+                            result[i, j] = 6;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        if (classes >= 7)
+                        {
+                            result[i, j] = 7;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             flag = true;
@@ -435,98 +605,90 @@ namespace TimeTable.Repository
                 int clas = 1;
                 for (int j = 0; j < cols; j++)
                 {
-                    switch (i)
+                    if (clas == 3 && i == 1)
                     {
-                        case 1:
-                            if (clas == 3)
-                            {
-                                if (classes == 24)
-                                {
-                                    result[i, j] = 24;
-                                    clas++;
-                                }
-                                else
-                                {
-                                    result[i, j] = 0;
-                                    clas++;
-                                }
-                            }
-                            else
-                            {
-                                result[i, j] = clas;
-                                if (clas > classes)
-                                {
-                                    result[i, j] = 0;
-                                }
-                                clas++;
-                            }
-                            break;
-
-                        case 2:
-                            if (!hasUpdatedClas)
-                            {
-                                clas += 17;
-                                hasUpdatedClas = true;
-                            }
-                            result[i, j] = clas;
-                            if (clas > classes)
-                            {
-                                result[i, j] = 0;
-                            }
+                        if (classes == 24)
+                        {
+                            result[i, j] = 24;
                             clas++;
-                            break;
-
-                        case 3:
-                            if (j == 1)
-                            {
-                                if (classes >= 3)
-                                {
-                                    result[i, j] = 3;
-                                }
-                                else
-                                {
-                                    result[i, j] = 0;
-                                }
-                            }
-                            else if (classes > 12)
-                            {
-                                if (clas > classes)
-                                {
-                                    result[i, j] = 0;
-                                }
-                                else
-                                {
-                                    if (!hasUpdatedClas2)
-                                    {
-                                        clas += 12;
-                                        hasUpdatedClas2 = true;
-                                    }
-
-                                    result[i, j] = clas;
-                                    clas++;
-                                }
-                            }
-                            break;
-
-                        case 0:
-                            if (classes > 6)
-                            {
-                                result[i, j] = clas + 6;
-                                if ((clas + 6) > classes)
-                                {
-                                    result[i, j] = 0;
-                                }
-                                clas++;
-                            }
-                            else
-                            {
-                                result[i, j] = 0;
-                            }
-                            break;
-
-                        default:
+                        }
+                        else
+                        {
                             result[i, j] = 0;
-                            break;
+                            clas++;
+                        }
+
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        if (classes >= 3)
+                        {
+                            result[i, j] = 3;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 0 && classes > 6)
+                    {
+                        result[i, j] = clas + 6;
+                        if ((clas + 6) > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        clas++;
+                    }
+                    else if (i == 1)
+                    {
+                        result[i, j] = clas;
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        clas++;
+
+                    }
+                    else if (i == 2)
+                    {
+                        if (!hasUpdatedClas)
+                        {
+                            clas += 17;
+                            hasUpdatedClas = true;
+                        }
+                        result[i, j] = clas;
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+
+                        clas++;
+
+                    }
+                    else if (i == 3 && classes > 12)
+                    {
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        else
+                        {
+                            if (!hasUpdatedClas2)
+                            {
+                                clas += 12;
+                                hasUpdatedClas2 = true;
+                            }
+
+                            result[i, j] = clas;
+
+                            clas++;
+
+                        }
+                    }
+
+                    else
+                    {
+                        result[i, j] = 0;
                     }
                 }
             }
@@ -544,109 +706,106 @@ namespace TimeTable.Repository
             {
                 for (int j = cols - 1; j >= 0; j--)
                 {
-                    switch ((i, j))
+                    if (i + j == 4)
                     {
-                        case var _ when (i + j == 4):
-                            result[i, j] = clas;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            clas++;
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case var _ when (i == 1 && j == 4) || (i == 2 && j == 3) || (i == 3 && j == 2):
-                            result[i, j] = clas + 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 1):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 3):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = clas;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                        clas++;
                     }
-
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if ((i == 1 && j == 4) || (i == 2 && j == 3) || (i == 3 && j == 2))
+                    {
+                        result[i, j] = clas + 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 3)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             return result;
@@ -663,133 +822,131 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch ((i, j))
+                    if (i == 0 && j == 3)
                     {
-                        case (0, 3):
-                            result[i, j] = 1;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 2):
-                            result[i, j] = 2;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 3;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 6;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 7;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                            result[i, j] = 8;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 1):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 2):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 4):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 3):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 3):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = 1;
+                        IsClassMoreThanClasses(result, classes, i, j);
                     }
+                    else if (i == 3 && j == 2)
+                    {
+                        result[i, j] = 2;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 3;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 6;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 7;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 8;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 2)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
 
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 3)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 3)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             flag = true;
@@ -806,42 +963,42 @@ namespace TimeTable.Repository
             {
                 for (int j = cols - 1; j >= 0; j--)
                 {
-                    switch ((clas, i, j))
+                    if (clas == 3)
                     {
-                        case (3, _, _):
-                            if (classes == 24)
-                            {
-                                result[i, j] = 24;
-                                clas++;
-                            }
-                            else
-                            {
-                                result[i, j] = 0;
-                                clas++;
-                            }
-                            break;
-
-                        case (_, 2, 4):
-                            if (classes >= 3)
-                            {
-                                result[i, j] = 3;
-                            }
-                            else
-                            {
-                                result[i, j] = 0;
-                            }
-                            break;
-
-                        case var _ when clas <= classes:
-                            result[i, j] = clas;
+                        if (classes == 24)
+                        {
+                            result[i, j] = 24;
                             clas++;
-                            break;
-
-                        default:
+                        }
+                        else
+                        {
                             result[i, j] = 0;
-                            break;
+                            clas++;
+                        }
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        if (classes >= 3)
+                        {
+                            result[i, j] = 3;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+
+                    }
+                    else if (clas <= classes)
+                    {
+                        result[i, j] = clas;
+                        clas++;
+
                     }
 
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
 
                 }
             }
@@ -860,122 +1017,119 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch ((i, j))
+                    if ((i == 1 && j == 1) || (i == 2 && j == 2) || (i == 3 && j == 3))
                     {
-                        case (1, 1):
-                        case (2, 2):
-                        case (3, 3):
-                            result[i, j] = clas;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            clas++;
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                        case (3, 2):
-                            result[i, j] = clas + 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 3):
-                            result[i, j] = 8;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 4):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = clas;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                        clas++;
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
                     }
 
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if ((i == 2 && j == 1) || (i == 3 && j == 2))
+                    {
+                        result[i, j] = clas + 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+
+                    }
+                    else if ((i == 2 && j == 3))
+                    {
+
+                        result[i, j] = 8;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             return result;
@@ -994,133 +1148,131 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch ((i, j))
+                    if (i == 2 && j == 3)
                     {
-                        case (2, 3):
-                            result[i, j] = 1;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 2;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 3;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 6;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 1):
-                            result[i, j] = 7;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 8;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 2):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 3):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 4):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 2):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = 1;
+                        IsClassMoreThanClasses(result, classes, i, j);
                     }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 2;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 3;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 6;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        result[i, j] = 7;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 8;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 2)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 3)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
 
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 2)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             flag = true;
@@ -1141,86 +1293,91 @@ namespace TimeTable.Repository
                 int clas = 1;
                 for (int j = cols - 1; j >= 0; j--)
                 {
-                    switch ((clas, i, j))
+                    if (clas == 3 && i == 1)
                     {
-                        case (3, 1, _):
-                            if (classes == 24)
-                            {
-                                result[i, j] = 24;
-                                clas++;
-                            }
-                            else
-                            {
-                                result[i, j] = 0;
-                                clas++;
-                            }
-                            break;
-
-                        case (_, 3, 4):
-                            if (classes >= 3)
-                            {
-                                result[i, j] = 3;
-                            }
-                            else
-                            {
-                                result[i, j] = 0;
-                            }
-                            break;
-
-                        case (int c, 0, _) when c > 6:
-                            result[i, j] = clas + 6;
-                            if ((clas + 6) > classes)
-                            {
-                                result[i, j] = 0;
-                            }
+                        if (classes == 24)
+                        {
+                            result[i, j] = 24;
                             clas++;
-                            break;
-
-                        case (int c, 1, _):
-                            result[i, j] = clas;
-                            if (clas > classes)
-                            {
-                                result[i, j] = 0;
-                            }
-                            clas++;
-                            break;
-
-                        case (_, 2, _):
-                            if (!hasUpdatedClas)
-                            {
-                                clas += 17;
-                                hasUpdatedClas = true;
-                            }
-                            result[i, j] = clas;
-                            if (clas > classes)
-                            {
-                                result[i, j] = 0;
-                            }
-                            clas++;
-                            break;
-
-                        case (int c, 3, _) when c > 12:
-                            if (clas > classes)
-                            {
-                                result[i, j] = 0;
-                            }
-                            else
-                            {
-                                if (!hasUpdatedClas2)
-                                {
-                                    clas += 12;
-                                    hasUpdatedClas2 = true;
-                                }
-                                result[i, j] = clas;
-                                clas++;
-                            }
-                            break;
-
-                        default:
+                        }
+                        else
+                        {
                             result[i, j] = 0;
-                            break;
+                            clas++;
+                        }
+
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        if (classes >= 3)
+                        {
+                            result[i, j] = 3;
+                        }
+                        else
+                        {
+                            result[i, j] = 0;
+                        }
+                    }
+                    else if (i == 0 && classes > 6)
+                    {
+                        result[i, j] = clas + 6;
+                        if ((clas + 6) > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        clas++;
+                    }
+                    else if (i == 1)
+                    {
+                        result[i, j] = clas;
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        clas++;
+
+                    }
+                    else if (i == 2)
+                    {
+                        if (!hasUpdatedClas)
+                        {
+                            clas += 17;
+                            hasUpdatedClas = true;
+                        }
+                        result[i, j] = clas;
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+
+                        clas++;
+
+                    }
+                    else if (i == 3 && classes > 12)
+                    {
+                        if (clas > classes)
+                        {
+                            result[i, j] = 0;
+                        }
+                        else
+                        {
+                            if (!hasUpdatedClas2)
+                            {
+                                clas += 12;
+                                hasUpdatedClas2 = true;
+                            }
+
+                            result[i, j] = clas;
+
+                            clas++;
+
+                        }
                     }
 
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             return result;
@@ -1238,110 +1395,107 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch ((i, j))
+                    if (j == i + 1)
                     {
-                        case (int x, int y) when y == x + 1:
-                            result[i, j] = clas;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            clas++;
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (int a1, int b) when (a1 == 1 && b == 1) || (a1 == 2 && b == 2) || (a1 == 3 && b == 3):
-                            result[i, j] = clas + 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            clas++;
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 4):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 2):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = clas;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                        clas++;
                     }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if ((i == 1 && j == 1) || (i == 2 && j == 2) || (i == 3 && j == 3))
+                    {
+                        result[i, j] = clas + 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
 
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 2)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             return result;
@@ -1360,133 +1514,131 @@ namespace TimeTable.Repository
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    switch ((i, j))
+                    if (i == 2 && j == 2)
                     {
-                        case (2, 2):
-                            result[i, j] = 1;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 5):
-                            result[i, j] = 2;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 0):
-                            result[i, j] = 3;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 0):
-                            result[i, j] = 4;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 3):
-                            result[i, j] = 5;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 2):
-                            result[i, j] = 6;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 4):
-                            result[i, j] = 7;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 5):
-                            result[i, j] = 8;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 5):
-                            result[i, j] = 9;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 1):
-                            result[i, j] = 10;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 3):
-                            result[i, j] = 11;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 2):
-                            result[i, j] = 12;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 4):
-                            result[i, j] = 13;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 0):
-                            result[i, j] = 14;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 4):
-                            result[i, j] = 15;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 0):
-                            result[i, j] = 16;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 1):
-                            result[i, j] = 17;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (2, 3):
-                            result[i, j] = 18;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 2):
-                            result[i, j] = 19;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 5):
-                            result[i, j] = 20;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 4):
-                            result[i, j] = 21;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (0, 1):
-                            result[i, j] = 22;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (1, 1):
-                            result[i, j] = 23;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        case (3, 3):
-                            result[i, j] = 24;
-                            IsClassMoreThanClasses(result, classes, i, j);
-                            break;
-
-                        default:
-                            result[i, j] = 0;
-                            break;
+                        result[i, j] = 1;
+                        IsClassMoreThanClasses(result, classes, i, j);
                     }
+                    else if (i == 1 && j == 5)
+                    {
+                        result[i, j] = 2;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 0)
+                    {
+                        result[i, j] = 3;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 0)
+                    {
+                        result[i, j] = 4;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 3)
+                    {
+                        result[i, j] = 5;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 2)
+                    {
+                        result[i, j] = 6;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 4)
+                    {
+                        result[i, j] = 7;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 5)
+                    {
+                        result[i, j] = 8;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 5)
+                    {
+                        result[i, j] = 9;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 1)
+                    {
+                        result[i, j] = 10;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 3)
+                    {
+                        result[i, j] = 11;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 2)
+                    {
+                        result[i, j] = 12;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 4)
+                    {
+                        result[i, j] = 13;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 0)
+                    {
+                        result[i, j] = 14;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 4)
+                    {
+                        result[i, j] = 15;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 0)
+                    {
+                        result[i, j] = 16;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 1)
+                    {
+                        result[i, j] = 17;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 2 && j == 3)
+                    {
+                        result[i, j] = 18;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 2)
+                    {
+                        result[i, j] = 19;
+                        IsClassMoreThanClasses(result, classes, i, j);
 
+                    }
+                    else if (i == 3 && j == 5)
+                    {
+                        result[i, j] = 20;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 4)
+                    {
+                        result[i, j] = 21;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 0 && j == 1)
+                    {
+                        result[i, j] = 22;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 1 && j == 1)
+                    {
+                        result[i, j] = 23;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else if (i == 3 && j == 3)
+                    {
+                        result[i, j] = 24;
+                        IsClassMoreThanClasses(result, classes, i, j);
+                    }
+                    else
+                    {
+                        result[i, j] = 0;
+                    }
                 }
             }
             flag = true;
@@ -1542,206 +1694,206 @@ namespace TimeTable.Repository
                 string[,] timeTableForEachClas = new string[rows, cols];
                 foreach (var idsubject in listSubject)
                 {
-                    switch (i)
+                    if (i == 0)
                     {
-                        case 0:
-                            switch(listSubject[i].appear)
-                            {
-                                case 1:
-                                    TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 2:
-                                    TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFirst2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 3:
-                                    TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFirst2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                            }
-                            break;
+                        if (listSubject[i].appear == 1)
+                        {
+                            TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 2)
+                        {
+                            TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFirst2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
 
-                        case 1:
-                            switch(listSubject[i].appear)
-                            {
-                                case 1:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 2:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 3:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag2);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                            }
-                            break;
+                        }
+                        else if (listSubject[i].appear == 3)
+                        {
+                            TimeTbForEarchSub = softFirst1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFirst2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
 
-                        case 2:
-                            switch (listSubject[i].appear)
-                            {
-                                case 1:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 2:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 3:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag2);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                            }
-                            break;
-
-                        case 3:
-                            switch(listSubject[i].appear)
-                            {
-                                case 1:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 2:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                                case 3:
-                                    TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag2);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    break;
-                            }
-                            break;
-
-                        case 4:
-                            if (listSubject[i].appear == 1)
-                            {
-                                if (flag1 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag2 == false)
-                                {
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag3 == false)
-                                {
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                            }
-                            else if (listSubject[i].appear == 2)
-                            {
-                                if (flag1 == false && flag2 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag1 == false && flag3 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag1 == false && flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag2 == false && flag3 == false)
-                                {
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag2 == false && flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag3 == false && flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                            }
-                            else if (listSubject[i].appear == 3)
-                            {
-                                if (flag1 == false && flag2 == false && flag3 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag1 == false && flag3 == false && flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                                else if (flag2 == false && flag3 == false && flag4 == false)
-                                {
-                                    TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                    TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
-                                    fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
-                                }
-                            }
-                            break;
                     }
+                    else if (i == 1)
+                    {
+                        if (listSubject[i].appear == 1)
+                        {
+                            TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 2)
+                        {
+                            TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 3)
+                        {
+                            TimeTbForEarchSub = softSecond1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softSecond2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag2);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                    }
+                    else if (i == 2)
+                    {
+                        if (listSubject[i].appear == 1)
+                        {
+                            TimeTbForEarchSub = softThird1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 2)
+                        {
+                            TimeTbForEarchSub = softThird1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softThird2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 3)
+                        {
+                            TimeTbForEarchSub = softThird1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softThird2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag3);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                    }
+                    else if (i == 3)
+                    {
+                        if (listSubject[i].appear == 1)
+                        {
+                            TimeTbForEarchSub = softFour1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 2)
+                        {
+                            TimeTbForEarchSub = softFour1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFour2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                        else if (listSubject[i].appear == 3)
+                        {
+                            TimeTbForEarchSub = softFour1(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFour2(TimeTbForEarchSub, totalClass);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag4);
+                            fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                        }
+                    }
+                    else if (i == 4)
+                    {
+                        if (listSubject[i].appear == 1)
+                        {
+                            if (flag1 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag2 == false)
+                            {
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag3 == false)
+                            {
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag4 == false)
+                            {
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                        }
 
+                        else if (listSubject[i].appear == 2)
+                        {
+                            if (flag1 == false && flag2 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag1 == false && flag3 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag1 == false && flag4 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag2 == false && flag3 == false)
+                            {
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag2 == false && flag4 == false)
+                            {
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag3 == false && flag4 == false)
+                            {
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                        }
+                        else if (listSubject[i].appear == 3)
+                        {
+                            if (flag1 == false && flag2 == false && flag3 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag1 == false && flag3 == false && flag4 == false)
+                            {
+                                TimeTbForEarchSub = softFirst3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                            else if (flag2 == false && flag3 == false && flag4 == false)
+                            {
+                                TimeTbForEarchSub = softSecond3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softThird3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                                TimeTbForEarchSub = softFour3(TimeTbForEarchSub, totalClass, flag1);
+                                fillSubForEachClass(TimeTbForEarchSub, timeTableForEachClas, listSubject[i].Id, cls + 1);
+                            }
+                        }
+                    }
                     i++;
                 }
                 timeTableForTotalClas.Add(timeTableForEachClas);
@@ -1751,12 +1903,13 @@ namespace TimeTable.Repository
             for (int ob = 0; ob < timeTableForTotalClas.Count; ob++)
             {
                 string[,] currentTable = timeTableForTotalClas[ob];
-                string cahoc = "";
-                string ngayhoc = "";
-                for (int i = 0; i < rows; i++)
+
+                for (int i = 0; i < rows; i++)  
                 {
+                    string cahoc = null;
                     for (int j = 0; j < cols; j++)
                     {
+                        string ngayhoc = null;
                         if (currentTable[i, j] != null)
                         {
                             switch (i)
@@ -1799,7 +1952,6 @@ namespace TimeTable.Repository
                                     ngayhoc = "Thứ 7";
                                     break;
                             }
-
                             Guid idDetail = Guid.NewGuid();
                             using (var connect1 = _connectToSql.CreateConnection())
                             {
@@ -1810,7 +1962,7 @@ namespace TimeTable.Repository
                                 cmd1.Parameters.AddWithValue("@idLecture", listIdSchedule[ob]);
                                 cmd1.Parameters.AddWithValue("@idSubject", currentTable[i, j]);
                                 cmd1.Parameters.AddWithValue("@dayStudy", ngayhoc);
-                                cmd1.Parameters.AddWithValue("@shiftStudy", cahoc);
+                                cmd1.Parameters.AddWithValue("@shiftStudy", cahoc   );
                                 cmd1.Connection = (SqlConnection)connect1;
                                 connect1.Open();
                                 int kq1 = await cmd1.ExecuteNonQueryAsync();
@@ -1823,6 +1975,43 @@ namespace TimeTable.Repository
 
             }
         }
+        //public async Task insertScheduleToDatabase(List<Guid> listIdSchedule, List<string[,]> timeTableForTotalClas)
+        //{
+        //    int rows = 4;
+        //    int cols = 6;
+        //    for (int ob = 0; ob < 10; ob++)
+        //    {
+        //        string[,] currentTable = timeTableForTotalClas[ob];
+
+        //        for (int i = 0; i < rows; i++)
+        //        {
+        //            for (int j = 0; j < cols; j++)
+        //            {
+        //                if(currentTable[i, j] != null)
+        //                {
+        //                    Guid idDetail = Guid.NewGuid();
+        //                    using (var connect1 = _connectToSql.CreateConnection())
+        //                    {
+        //                        SqlCommand cmd1 = new SqlCommand();
+        //                        cmd1.CommandType = CommandType.Text;
+        //                        cmd1.CommandText = "INSERT INTO Lecture_Schedule_Detail (Id,idLecture_Schedule , idSubject , dayStudy , shiftStudy) VALUES ( @idDetail , @idLecture , @idSubject , @dayStudy , @shiftStudy )";
+        //                        cmd1.Parameters.AddWithValue("@idDetail", idDetail);
+        //                        cmd1.Parameters.AddWithValue("@idLecture", listIdSchedule[ob]);
+        //                        cmd1.Parameters.AddWithValue("@idSubject", currentTable[i, j]);
+        //                        cmd1.Parameters.AddWithValue("@dayStudy", (j + 2).ToString());
+        //                        cmd1.Parameters.AddWithValue("@shiftStudy", (i + 1).ToString());
+        //                        cmd1.Connection = (SqlConnection)connect1;
+        //                        connect1.Open();
+        //                        int kq1 = await cmd1.ExecuteNonQueryAsync();
+        //                        int test1 = kq1;
+        //                    }
+        //                }
+        //            }
+
+        //        }
+
+        //    }   
+        //}
         public int IsClassMoreThanClasses(int[,] result, int classes, int i, int j)
         {
             if (result[i, j] > classes)

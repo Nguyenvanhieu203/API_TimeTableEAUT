@@ -16,18 +16,18 @@ namespace TimeTable.API.Controllers
         }
 
         [HttpGet]
-        public async Task<MethodResult> GetAllLecture_ScheduleManager()
+        public async Task<MethodResult> GetAllLecture_ScheduleManager(int pageIndex, int pageSize)
         {
-            var result = await _lecture_ScheduleManagerRepons.GetAllLecture_ScheduleManagerAsync();
-            if(result == null) MethodResult.ResultWithError(result,400,"Error",0);
-            return MethodResult.ResultWithSuccess(result,200,"Successfull", 0);
+            var result = await _lecture_ScheduleManagerRepons.GetAllLecture_ScheduleManagerAsync(pageIndex,pageSize);
+            if(result.Item1 == null) MethodResult.ResultWithError(result.Item1,400,"Error",result.Item2);
+            return MethodResult.ResultWithSuccess(result.Item1,200,"Successfull", result.Item2);
         }
         [HttpGet("Name")]
-        public async Task<IActionResult> GetLecture_ScheduleManagerByName (string name)
+        public async Task<MethodResult> GetLecture_ScheduleManagerByName (string name, int pageIndex, int pageSize)
         {
-            var reuslt = await _lecture_ScheduleManagerRepons.GetLecture_ScheduleManagerByNameAsync(name);
-            if(reuslt == null) NotFound();
-            return Ok(reuslt);
+            var reuslt = await _lecture_ScheduleManagerRepons.GetLecture_ScheduleManagerByNameAsync(name, pageIndex, pageSize);
+            if(reuslt.Item1 == null) MethodResult.ResultWithError(reuslt.Item1, 400, "Error", reuslt.Item2);
+            return MethodResult.ResultWithSuccess(reuslt.Item1, 200, "Successfull", reuslt.Item2);
         }
 
         [HttpPost("Scheduling")]

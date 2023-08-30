@@ -257,7 +257,7 @@ namespace TimeTable.Repository
                 {
                     using (var columnRange = worksheet.Cells[2, column, worksheet.Dimension.Rows, column])
                     {
-                        columnRange.Style.Numberformat.Format = "yyyy-MM-dd"; // Customize the date format as needed
+                        columnRange.Style.Numberformat.Format = "dd-mm-yyyy"; // Customize the date format as needed
                     }
                 }
 
