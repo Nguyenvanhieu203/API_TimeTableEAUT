@@ -72,7 +72,7 @@ namespace TimeTable.Repository
                     parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
                     var result = await connect.QueryAsync<Lecture_ScheduleUserModel>(
-                        "GetAllTimeTable",
+                        "GetNoUserTimeTable",
                         parameters,
                         commandType: CommandType.StoredProcedure
                     );
@@ -125,7 +125,7 @@ namespace TimeTable.Repository
             }
         }
 
-        public async Task<string> UserRegisterEdCalendarAsync(string token, Guid idSchedure, LectureSchedureMapUserModel lectureSchedureMapUserModel)
+        public async Task<string> UserRegisterEdCalendarAsync(string token, Guid idSchedure, string Course_Code)
         {
             string result = null;
             try
@@ -145,13 +145,9 @@ namespace TimeTable.Repository
                     command.CommandType = CommandType.StoredProcedure;
                     command.CommandText = "AddLectureSchedureMapUser";
                     Guid IdClass = Guid.NewGuid();
-                        command.Parameters.AddWithValue("@Id", IdClass);
                     command.Parameters.AddWithValue("@IdUser", UserId);
                     command.Parameters.AddWithValue("@IdSchedure", idSchedure);
-                    command.Parameters.AddWithValue("@Description", lectureSchedureMapUserModel.Description);
-                    command.Parameters.AddWithValue("@CreateBy", UserId);
-                    command.Parameters.AddWithValue("@CreateDate", DateTime.UtcNow);
-                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.UtcNow);
+                    command.Parameters.AddWithValue("@CourseCode", Course_Code);
                     command.Connection = (SqlConnection)connect;
                     connect.Open();
                     int kq = await command.ExecuteNonQueryAsync();
