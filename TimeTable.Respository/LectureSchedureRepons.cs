@@ -145,7 +145,7 @@ namespace TimeTable.Repository
                     command.CommandType = CommandType.StoredProcedure;
                     command.CommandText = "AddLectureSchedureMapUser";
                     Guid IdClass = Guid.NewGuid();
-                    command.Parameters.AddWithValue("@Id", IdClass);
+                        command.Parameters.AddWithValue("@Id", IdClass);
                     command.Parameters.AddWithValue("@IdUser", UserId);
                     command.Parameters.AddWithValue("@IdSchedure", idSchedure);
                     command.Parameters.AddWithValue("@Description", lectureSchedureMapUserModel.Description);

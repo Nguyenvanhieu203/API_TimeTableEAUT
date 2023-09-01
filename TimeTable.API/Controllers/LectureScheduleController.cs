@@ -39,9 +39,9 @@ namespace TimeTable.API.Controllers
         }
 
         [HttpPost]
-        public async Task<MethodResult> UserRegisterEdCalendar (string token, Guid IdSchedure, LectureSchedureMapUserModel lectureSchedureMapUserModel)
+        public async Task<MethodResult> UserRegisterEdCalendar (string token, Guid IdSchedure, string Course_Code)
         {
-            var result = await _lectureSchedureRepons.UserRegisterEdCalendarAsync(token, IdSchedure, lectureSchedureMapUserModel);
+            var result = await _lectureSchedureRepons.UserRegisterEdCalendarAsync(token, IdSchedure, Course_Code);
             if(result == null) return MethodResult.ResultWithError(result, 400, "Error", 0);
             return MethodResult.ResultWithSuccess(result, 200, "Successfull",0);
         }
