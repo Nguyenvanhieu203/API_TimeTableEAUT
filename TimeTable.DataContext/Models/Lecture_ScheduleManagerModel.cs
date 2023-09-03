@@ -20,11 +20,14 @@
     }
     public class Lecture_ScheduleUserModel
     {
+        public Guid IdLecture_Schedule { get; set; }
         public string Course_Code { get; set; }
         public string FullName { get; set; }
         public string LopHoc { get; set; }
         public string PhongHoc { get; set; }
         public string MonHoc { get; set; }
+        public DateTime dateStart { get; set; }
+        public DateTime dateEnd { get; set; }
         public string LichHocTongList { get; set; }
     }
 }

@@ -59,7 +59,7 @@ namespace TimeTable.Repository
 
 
         // Lấy tất cả lịch để đăng ký
-        public async Task<(List<Lecture_ScheduleUserModel>, int)> GetAllSchedureReponsAsync( int pageIndex, int pageSize)
+        public async Task<(List<Lecture_ScheduleUserModel>, int)> GetAllSchedureReponsAsync( int pageIndex, int pageSize, int check, string Name)
         {
             try
             {
@@ -67,6 +67,8 @@ namespace TimeTable.Repository
                 using (var connect = _connectToSql.CreateConnection())
                 {
                     var parameters = new DynamicParameters();
+                    parameters.Add("@check", check);
+                    parameters.Add("@Name", Name);
                     parameters.Add("@pageIndex", pageIndex);
                     parameters.Add("@pageSize", pageSize);
                     parameters.Add("@totalRecords", dbType: DbType.Int32, direction: ParameterDirection.Output);

@@ -31,11 +31,11 @@ namespace TimeTable.API.Controllers
         }
 
         [HttpPost("Scheduling")]
-        public async Task<IActionResult> Scheduling(SchedulingInputModel schedulingInputModel)
+        public async Task<MethodResult> Scheduling(SchedulingInputModel schedulingInputModel)
         {
             var result = await _lecture_ScheduleManagerRepons.SchedulingAscync(schedulingInputModel);   
-            if(result == null) NotFound();
-            return Ok(result);
+            if(result == null) MethodResult.ResultWithError(result, 400, "Error", 0);
+            return MethodResult.ResultWithSuccess(result, 200, "Successfull");
         }
     }
 }

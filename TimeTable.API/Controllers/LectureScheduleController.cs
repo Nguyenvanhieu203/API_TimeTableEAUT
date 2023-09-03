@@ -31,9 +31,9 @@ namespace TimeTable.API.Controllers
         }
 
         [HttpGet("Registered_Calendar")]
-        public async Task<MethodResult> GetRegisteredCalendar(int pageIndex, int pageSize)
+        public async Task<MethodResult> GetRegisteredCalendar(int pageIndex, int pageSize, int check, string Name)
         {
-            var result = await _lectureSchedureRepons.GetAllSchedureReponsAsync(pageIndex, pageSize);
+            var result = await _lectureSchedureRepons.GetAllSchedureReponsAsync(pageIndex, pageSize, check, Name);
             if (result.Item1 == null) return MethodResult.ResultWithError(result.Item1, 400, "Error", result.Item2);
             return MethodResult.ResultWithSuccess(result.Item1, 200, "Successfull", result.Item2);
         }

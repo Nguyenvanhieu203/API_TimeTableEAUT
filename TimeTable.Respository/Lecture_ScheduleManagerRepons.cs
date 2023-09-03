@@ -116,7 +116,7 @@ namespace TimeTable.Repository
                     bool flag3 = false;
                     bool flag4 = false;
 
-                    softTimeTable(SubjectList, timeTableForTotalSub, timeTableForTotalClas, classList, flag1, flag2, flag3, flag4, schedulingInputModel);
+                    softTimeTable(SubjectList, timeTableForTotalSub, timeTableForTotalClas, classList, flag1, flag2, flag3, flag4, schedulingInputModel,schedulingInputModel.DateStart, schedulingInputModel.DateEnd);
                     //int count = timeTableForTotalClas.Count;
                     //insertScheduleToDatabase(listIdSchedule, timeTableForTotalClas);
 
@@ -1661,7 +1661,7 @@ namespace TimeTable.Repository
         }
 
         List<Guid> listIdSchedule = new List<Guid>();
-        public async Task softTimeTable(List<Subject> listSubject, List<int[,]> timeTableForTotalSub, List<string[,]> timeTableForTotalClas, List<Class> classList, bool flag1, bool flag2, bool flag3, bool flag4, SchedulingInputModel schedulingInputModel)
+        public async Task softTimeTable(List<Subject> listSubject, List<int[,]> timeTableForTotalSub, List<string[,]> timeTableForTotalClas, List<Class> classList, bool flag1, bool flag2, bool flag3, bool flag4, SchedulingInputModel schedulingInputModel, DateTime startDate, DateTime endDate)
         {
             int rows = 4;
             int cols = 6;
@@ -1957,12 +1957,14 @@ namespace TimeTable.Repository
                             {
                                 SqlCommand cmd1 = new SqlCommand();
                                 cmd1.CommandType = CommandType.Text;
-                                cmd1.CommandText = "INSERT INTO Lecture_Schedule_Detail (Id,idLecture_Schedule , idSubject , dayStudy , shiftStudy) VALUES ( @idDetail , @idLecture , @idSubject , @dayStudy , @shiftStudy )";
+                                cmd1.CommandText = "INSERT INTO Lecture_Schedule_Detail (Id,idLecture_Schedule , idSubject , dayStudy , shiftStudy, dateStart, dateEnd) VALUES ( @idDetail , @idLecture , @idSubject , @dayStudy , @shiftStudy , @dateStart, @dateEnd)";
                                 cmd1.Parameters.AddWithValue("@idDetail", idDetail);
                                 cmd1.Parameters.AddWithValue("@idLecture", listIdSchedule[ob]);
                                 cmd1.Parameters.AddWithValue("@idSubject", currentTable[i, j]);
                                 cmd1.Parameters.AddWithValue("@dayStudy", ngayhoc);
-                                cmd1.Parameters.AddWithValue("@shiftStudy", cahoc   );
+                                cmd1.Parameters.AddWithValue("@shiftStudy", cahoc);
+                                cmd1.Parameters.AddWithValue("@dateStart", startDate);
+                                cmd1.Parameters.AddWithValue("@dateEnd", endDate);
                                 cmd1.Connection = (SqlConnection)connect1;
                                 connect1.Open();
                                 int kq1 = await cmd1.ExecuteNonQueryAsync();
