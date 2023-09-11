@@ -28,13 +28,16 @@ namespace TimeTable.Repository
                     result = "Token không hợp lệ";
                 }
                 Guid UserId = Guid.Parse(userIdClaim.Value);
+                var salt = PasswordManager.GenerateSalt(); // Tạo chuỗi salt mới cho mật khẩu
+                var hashedPassword = PasswordManager.HashPassword(changerPassword.PassWordHas, salt);
+                var hashedPasswordNew = PasswordManager.HashPassword(changerPassword.NewPassword, salt);
                 SqlCommand command = new SqlCommand();
                 var command1 = connect.CreateCommand();
                 command.CommandType = CommandType.StoredProcedure;
                 command.CommandText = "ChangerPassword";
                 command.Parameters.AddWithValue("@Id", UserId);
-                command.Parameters.AddWithValue("@PassWordHas", changerPassword.PassWordHas);
-                command.Parameters.AddWithValue("@NewPassWord", changerPassword.NewPassword);
+                command.Parameters.AddWithValue("@PassWordHas", hashedPassword);
+                command.Parameters.AddWithValue("@NewPassWord", hashedPasswordNew);
                 command.Parameters.AddWithValue("@ModifiedBy", UserId);
                 command.Parameters.AddWithValue("@ModifiedDate", DateTime.UtcNow);
                 command.Connection = (SqlConnection)connect;

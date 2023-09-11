@@ -28,17 +28,12 @@ namespace TimeTable.Repository
         {
             try
             {
-                //using (var hmac = new HMACSHA512())
-                //{
-                //    // Mã hóa mật khẩu theo kiểu HMACSHA512
-                //    byte[] passwordByte = Encoding.UTF8.GetBytes(signInModel.Password);
-                //    byte[] hashedPasswordByte = hmac.ComputeHash(passwordByte);
-                //    string hashedPassWord = BitConverter.ToString(hashedPasswordByte).Replace("-", string.Empty);
-                //    //
+                var salt = PasswordManager.GenerateSalt(); // Tạo chuỗi salt mới cho mật khẩu
+                var hashedPassword = PasswordManager.HashPassword(signInModel.PassWordHas, salt);
                 string query = "select count(*) from dbo.Users where Email = @Email and PassWordHas = @PassWordHas";
                 var parameter = new DynamicParameters();
                 parameter.Add("Email", signInModel.Email, DbType.String);
-                parameter.Add("PassWordHas", signInModel.PassWordHas, DbType.String);
+                parameter.Add("PassWordHas", hashedPassword, DbType.String);
 
                 using (var connect = _connectToSql.CreateConnection())
                 {
@@ -70,15 +65,6 @@ namespace TimeTable.Repository
                             await command.ExecuteNonQueryAsync();
                             roles = resultParam.Value.ToString();
                         }
-
-                        //int keySizeInBits = 512; // Kích thước khóa 512 bits
-                        //byte[] keyBytes = new byte[keySizeInBits / 8]; // Chia cho 8 để chuyển đổi thành bytes
-
-                        //using (var rng = RandomNumberGenerator.Create())
-                        //{
-                        //    rng.GetBytes(keyBytes);
-                        //}
-                        //var authenKey = new SymmetricSecurityKey(keyBytes);
                         var authClaims = new List<Claim>
                         {
                             new Claim(ClaimTypes.Email, signInModel.Email),
@@ -97,7 +83,7 @@ namespace TimeTable.Repository
                         var token = new JwtSecurityToken(
                                 issuer: _configuration["JWT:ValidIssuer"],
                                 audience: _configuration["JWT:ValidAudience"],
-                                expires: DateTime.Now.AddMinutes(20),
+                                expires: DateTime.Now.AddMinutes(30),
                                 claims: authClaims,
                                 signingCredentials: new SigningCredentials(authenKey, SecurityAlgorithms.HmacSha512Signature)
                         );
@@ -130,105 +116,39 @@ namespace TimeTable.Repository
         {
             try
             {
-                string result = string.Empty;
-                string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$";
-                if (Regex.IsMatch(signUpModel.Password, passwordPattern))
+                using (var connect = _connectToSql.CreateConnection())
                 {
-                    if (signUpModel.Password == signUpModel.ConfirmPassword)
+                    var salt = PasswordManager.GenerateSalt(); // Tạo chuỗi salt mới cho mật khẩu
+                    var hashedPassword = PasswordManager.HashPassword(signUpModel.Password, salt); // Mã hóa mật khẩu
+
+                    var parameter = new DynamicParameters();
+                    parameter.Add("FirstName", signUpModel.FirstName, DbType.String);
+                    parameter.Add("LastName", signUpModel.LastName, DbType.String);
+                    parameter.Add("Email", signUpModel.Email, DbType.String);
+                    parameter.Add("Password", hashedPassword, DbType.String); // Lưu mật khẩu đã mã hóa
+                    parameter.Add("PhoneNumber", signUpModel.PhoneNumber, DbType.Int64);
+                    parameter.Add("TypeAccount", signUpModel.TypeAccount, DbType.String);
+                    parameter.Add("Gender", signUpModel.Gender, DbType.Int32);
+                    parameter.Add("DateOfBirth", signUpModel.DateOfBirth, DbType.Date);
+                    parameter.Add("Avata", signUpModel.Avata, DbType.String);
+
+                    var result = await connect.QueryFirstOrDefaultAsync<string>("SignUpUser", parameter, commandType: CommandType.StoredProcedure);
+
+                    if (result == "SignUp Success")
                     {
-                        //using (var hmac = new HMACSHA512())
-                        //{
-                        //    // Mã hóa mật khẩu theo kiểu HMACSHA512
-                        //    byte[] passwordByte = Encoding.UTF8.GetBytes(signUpModel.Password);
-                        //    byte[] hashedPasswordByte = hmac.ComputeHash(passwordByte);
-                        //    string hashedPassWord = BitConverter.ToString(hashedPasswordByte).Replace("-", string.Empty);
-                        //Kiểm tra tài khoản đã tồn tại hay chưa
-                        string queryCheckSignIn = "SELECT COUNT(*) FROM dbo.Users WHERE Email = @Email Or PassWordHas = @Password";
-                        var parameterCheckSignIn = new DynamicParameters();
-                        parameterCheckSignIn.Add("Email", signUpModel.Email, DbType.String);
-                        parameterCheckSignIn.Add("Password", signUpModel.Password, DbType.String);
-                        // Thêm data vào bảng Users
-                        Roles roles = new Roles();
-                        Users users = new Users();
-                        RoleMappingUser roleMappingUser = new RoleMappingUser();
-                        string query = "Insert into dbo.Users(Id, FirstName, LastName, FullName , UserName, Email, PassWordHas, Phone , Gender, DateOfBirth, Avata, UsedState ,CreateDate , ModifiedDate)" +
-                            "Values (@id,@firstName ,@lastName, @fullName , @userName, @email,@passwordhas, @phone,@gender, @dateOfBirth, @avata , @usedState , @createDate , @modifiedDate)";
-                        var parameter = new DynamicParameters();
-                        Guid idUser = Guid.NewGuid();
-                        parameter.Add("Id", idUser, DbType.Guid);
-                        parameter.Add("FirstName", signUpModel.FirstName, DbType.String);
-                        parameter.Add("LastName", signUpModel.LastName, DbType.String);
-                        parameter.Add("FullName", signUpModel.FirstName + " " + signUpModel.LastName, DbType.String);
-                        parameter.Add("UserName", (signUpModel.FirstName + " " + signUpModel.LastName), DbType.String);
-                        parameter.Add("Email", signUpModel.Email, DbType.String);
-                        parameter.Add("PassWordHas", signUpModel.Password, DbType.String);
-                        parameter.Add("Phone", signUpModel.PhoneNumber, DbType.Int64);
-                        parameter.Add("Gender", signUpModel.Gender, DbType.Int64);
-                        parameter.Add("DateOfBirth", signUpModel.DateOfBirth, DbType.Date);
-                        if(signUpModel.Avata != "string")
-                        {
-                            parameter.Add("Avata", signUpModel.Avata, DbType.String);
-                        }
-                        else
-                        {
-                            parameter.Add("Avata", "https://img.freepik.com/free-icon/user_318-159711.jpg", DbType.String);
-                        }
-                        parameter.Add("UsedState", 0, DbType.Int64);
-                        parameter.Add("CreateDate", DateTime.UtcNow, DbType.Date);
-                        parameter.Add("ModifiedDate", DateTime.UtcNow, DbType.Date);
-                        // Thêm data vào bảng Roles
-                        string queryRole = "Insert into dbo.Roles (Id, Name, CreateDate, ModifiedDate) Values (@id, @name , @CreateDate, @ModifiedDate)";
-                        var parameterRole = new DynamicParameters();
-                        Guid idRole = Guid.NewGuid();
-                        parameterRole.Add("Id", idRole, DbType.Guid);
-                        parameterRole.Add("Name", "User", DbType.String);
-                        parameterRole.Add("CreateDate", DateTime.UtcNow, DbType.Date);
-                        parameterRole.Add("ModifiedDate", DateTime.UtcNow, DbType.Date);
-                        // Thêm data vào bảng RoleMappingUsers
-                        string queryRoleMapUser = "Insert into dbo.UserMappingRoles (Id, IdUser, IdRole) Values (@id, @idUser, @idRole)";
-                        var parameterRoleMapUser = new DynamicParameters();
-                        Guid idRoleMappingUser = Guid.NewGuid();
-                        parameterRoleMapUser.Add("Id", idRoleMappingUser, DbType.Guid);
-                        parameterRoleMapUser.Add("IdUser", idUser, DbType.Guid);
-                        parameterRoleMapUser.Add("IdRole", idRole, DbType.Guid);
-                        using (var connect = _connectToSql.CreateConnection())
-                        {
-                            var kqCheckSignIn = await connect.ExecuteScalarAsync<int>(queryCheckSignIn, parameterCheckSignIn);
-                            if (kqCheckSignIn != 0) result = "Tên đăng nhập hoặc mật khẩu đã tồn tại";
-                            else
-                            {
-                                var kq = await connect.ExecuteAsync(query, parameter);
-                                var kq1 = await connect.ExecuteAsync(queryRole, parameterRole);
-                                var kq2 = await connect.ExecuteAsync(queryRoleMapUser, parameterRoleMapUser);
-                                if (kq > 0)
-                                {
-                                    if (kq1 > 0)
-                                    {
-                                        if (kq2 > 0)
-                                        {
-                                             result = "SignUp Success";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        //}
+                        return "SignUp Success";
                     }
                     else
                     {
-                        result = "Vui lòng nhập hai mật khẩu giống nhau";
+                        return "SignUp Error";
                     }
                 }
-                else
-                {
-                    result = "Mật khẩu phải có ít nhất 8 ký tự, một chữ cái viết hoa, một chữ cái viết thường và một ký tự đặc biệt";
-                }
-                return result;
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
+
         }
     }
 }

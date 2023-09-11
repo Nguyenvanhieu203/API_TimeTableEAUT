@@ -92,10 +92,10 @@ namespace TimeTable.Repository
                     command.Parameters.AddWithValue("@FullName", editAccountManagerModel.FirstName + " " + editAccountManagerModel.LastName);
                     command.Parameters.AddWithValue("@UserName", editAccountManagerModel.FirstName + " " + editAccountManagerModel.LastName);
                     command.Parameters.AddWithValue("@Gender", editAccountManagerModel.Gender);
-                    command.Parameters.AddWithValue("@Email", editAccountManagerModel.Email);
-                    command.Parameters.AddWithValue("@PhoneNumber", editAccountManagerModel.NumberPhone);
+                    //command.Parameters.AddWithValue("@Email", editAccountManagerModel.Email);
+                    //command.Parameters.AddWithValue("@PhoneNumber", editAccountManagerModel.NumberPhone);
                     command.Parameters.AddWithValue("@DateOfBirth", editAccountManagerModel.DateOfBirth);
-                    command.Parameters.AddWithValue("@UsedStated", editAccountManagerModel.UsedStated);
+                    //command.Parameters.AddWithValue("@UsedStated", editAccountManagerModel.UsedStated);
                     command.Parameters.AddWithValue("@Avata", editAccountManagerModel.Avata);
                     command.Parameters.AddWithValue("@Description", editAccountManagerModel.Description);
                     command.Parameters.AddWithValue("@ModifiedBy", UserId);

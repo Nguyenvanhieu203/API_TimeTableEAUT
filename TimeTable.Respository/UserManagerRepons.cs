@@ -22,7 +22,7 @@ namespace TimeTable.Repository
                 string result = "";
                 using (var connect = _connectToSql.CreateConnection())
                 {
-                    var result1 = await connect.ExecuteAsync("DeleteUserById", new {  Id = id }, commandType: CommandType.StoredProcedure);
+                    var result1 = await connect.ExecuteAsync("DELETEById", new {  Id = id }, commandType: CommandType.StoredProcedure);
                     if (result1 >= 1) result = "Xóa thành công";
                     else result = "Xóa thất bại";
                     return result;
@@ -85,6 +85,25 @@ namespace TimeTable.Repository
                     int totalRecords = parameters.Get<int>("@totalRecords");
 
                     return (result.ToList(), totalRecords);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> LockAccount(string TypeAccount, int UsedStated)
+        {
+            try
+            {
+                string result = "";
+                using (var connect = _connectToSql.CreateConnection())
+                {
+                    var result1 = await connect.ExecuteAsync("LockAccount", new { TypeAccount = TypeAccount, UsedStated = UsedStated }, commandType: CommandType.StoredProcedure);
+                    if (result1 >= 1) result = "Thành công";
+                    else result = "Xóa thất bại";
+                    return result;
                 }
             }
             catch (Exception ex)

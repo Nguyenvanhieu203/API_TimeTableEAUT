@@ -46,5 +46,12 @@ namespace TimeTable.API.Controllers
             if (result == null) return MethodResult.ResultWithSuccess(result, 400, "Error", 0);
             return MethodResult.ResultWithSuccess(result, 200, "Successfull", 0);
         }
+        [HttpPut("LoclAccount")]
+        public async Task<MethodResult> LockAccount(string TypeAccount, int UsedStated)
+        {
+            var result = await _userManagerRepons.LockAccount(TypeAccount, UsedStated);
+            if (result == null) return MethodResult.ResultWithSuccess(result, 400, "Error", 0);
+            return MethodResult.ResultWithSuccess(result, 200, "Successfull", 0);
+        }
     }
 }

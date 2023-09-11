@@ -13,5 +13,6 @@ namespace TimeTable.Respository.Interfaces
         public Task<(List<UserManagerModel>, int)> GetUserByIdAsync(string id);
         public Task<string> DeleteUserByIdAsync(Guid id);
         public Task<string> UpdateUsedStatedByIdAsync(Guid id, int usedStated);
+        public Task<string> LockAccount(string TypeAccount, int UsedStated);
     }
 }

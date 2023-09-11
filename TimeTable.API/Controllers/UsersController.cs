@@ -21,9 +21,20 @@ namespace TimeTable.API.Controllers
             var result1 = new Custommessage();  
             string validatePhone = @"^0\d{9}$";
             string validateEmail = @"^[a-zA-Z0-9._%+-]+@eaut\.edu\.vn$"; 
+            string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$";
             if (!Regex.IsMatch(signUpModel.PhoneNumber, validatePhone) || !Regex.IsMatch(signUpModel.Email,validateEmail))
             {
                 result1.status = "Số điện thoại hoặc email không hợp lệ";
+                return result1;
+            }
+            if(!Regex.IsMatch(signUpModel.Password, passwordPattern))
+            {
+                result1.status = "Mật khẩu phải có ít nhất 8 ký tự, một chữ cái viết hoa, một chữ cái viết thường và một ký tự đặc biệt";
+                return result1;
+            }
+            if(signUpModel.Password != signUpModel.ConfirmPassword)
+            {
+                result1.status = "Vui lòng điền hai mật khẩu giống nhau";
                 return result1;
             }
             var result = await accRepo.SignUpAsync(signUpModel);
@@ -48,6 +59,14 @@ namespace TimeTable.API.Controllers
                 //result1.status = BadRequest().ToString();
                 throw new Exception();
                 //return string.Empty;
+            }
+            if(result == "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin để mở" || result == "Tên đăng nhập hoặc mật khẩu không đúng")
+            {
+                result1.status = "Error";
+            }
+            else
+            {
+                result1.status = "Thành công";
             }
             result1.token = result;
             result1.email = user.Email;

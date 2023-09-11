@@ -252,7 +252,7 @@ namespace TimeTable.Repository
                 command.Parameters.AddWithValue("@DateEnd", subjectModel.DateEnd);
                 command.Parameters.AddWithValue("@Description", subjectModel.Description);
                 command.Parameters.AddWithValue("@ModifiedBy", UserId);
-                command.Parameters.AddWithValue("@ModifiedDate", DateOnly.FromDateTime(DateTime.Now));
+                command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
                 command.Connection = (SqlConnection)connect;
 
                 // Add the @Result parameter for the stored procedure (output parameter).
